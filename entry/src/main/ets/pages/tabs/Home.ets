@@ -24,10 +24,38 @@ export default struct Home{
     .padding({left: 16, right: 16})
   }
 
+  @Builder
+  buildNavigationBar() {
+    Row(){
+      Image($r('app.media.nav_bar'))
+        .height(44)
+    }
+    .width('100%')
+    .padding({left: 16, right: 16, top: 10})
+  }
+
+  @Builder
+  buildHomeContent() {
+    Column(){
+      // 放置一个滚动的容器
+      Scroll(){
+        Column(){
+          this.buildNavigationBar() // 放置一个导航栏
+        }
+      }
+    }
+    .width('100%')
+    .height('100%')
+    .padding({top: 58})
+  }
+
   build(){
+    // 创建一个Stack布局，并且需要设置内容顶部对齐
     Stack({
       alignContent: Alignment.Top
     }){
+      // 构建首页的主内容区域
+      this.buildHomeContent();
       this.buildHomeHeader()
     }
     .width('100%')
