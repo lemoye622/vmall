@@ -10,7 +10,7 @@ const HTTP_READ_TIMEOUT = 10000;
 // 定义服务器网络错误的提示消息
 const SERVER_NET_ERROR = '请求数据失败';
 
-export  class HttpService {
+export class HttpService {
   private static async httpRequest<T = any, R = any>(
     method: http.RequestMethod,
     apiUrl: string,
@@ -26,7 +26,7 @@ export  class HttpService {
       expectDataType: http.HttpDataType.OBJECT, // 设置预期希望服务器返回的响应数据类型
     }
     // 若请求的方法不是GET且有额外的数据，要将额外的数据添加到请求选项中
-    if(method !== http.RequestMethod.GET && extraData) {
+    if (method !== http.RequestMethod.GET && extraData) {
       requestOptions.extraData = extraData;
     }
     try {

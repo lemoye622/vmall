@@ -11,9 +11,10 @@ import Personal from './tabs/Personal'
 struct Index {
   tabsController: TabsController = new TabsController();
   @State selectedTabIndex: number = 0;
+
   @Builder
   buildTab(tab: Tab, index: number) {
-    Column(){
+    Column() {
       Image(index === this.selectedTabIndex ? tab.selectedIcon : tab.icon)
         .width(24)
         .height(24)
@@ -35,14 +36,14 @@ struct Index {
   }
 
   build() {
-    Column(){
+    Column() {
       Tabs({ // 创建tabs容器的时候
         barPosition: BarPosition.End, // 指定bar的位置
         controller: this.tabsController, // 指定使用哪个控制器
         index: this.selectedTabIndex // 当前选中的索引
-      }){
+      }) {
         ForEach(tabs, (tab: Tab, index: number) => {
-          TabContent(){
+          TabContent() {
             if (index === 0) {
               Home()
             } else if (index === 1) {
