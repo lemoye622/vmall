@@ -1,6 +1,7 @@
 import { HttpService } from '../../services/HttpService'
 import { Banner } from '../../types/Banner'
 import promptAction from '@ohos.promptAction';
+import { NavigationMenu } from '../../types/NavigationMenu';
 
 @Entry
 @Component
@@ -8,9 +9,11 @@ export default struct Home {
   @State banners: Banner[] = [];
   @State isLoadingBanners: boolean = false;
   @State isLoadBannersFailed: boolean = false;
+  @State navigationMenus: NavigationMenu[] = [];
 
   aboutToAppear() {
-    this.fetchBanners()
+    this.fetchBanners();
+    this.fetchNavigationMenus();
   }
 
   private async fetchBanners() {
@@ -32,6 +35,15 @@ export default struct Home {
       this.isLoadBannersFailed = true;
     } finally {
       this.isLoadingBanners = false;
+    }
+  }
+
+  private async fetchNavigationMenus() {
+    const response = await HttpService.get<NavigationMenu[]>('/navigationMenus');
+    if (response.success) {
+      this.navigationMenus = response.data
+    } else {
+      console.error('获取 navigationMenus 失败:', response.message);
     }
   }
 
@@ -98,6 +110,42 @@ export default struct Home {
   }
 
   @Builder
+  buildNavigationMenus() {
+    Swiper() {
+      Grid() {
+        ForEach(this.navigationMenus.slice(0, 10), (item: NavigationMenu) => {
+          GridItem() {
+            Column() {
+              Image(item.iconUrl)
+                .width(48)
+                .height(48)
+              Text(item.title)
+                .fontSize(12)
+            }
+            .alignItems(HorizontalAlign.Center)
+            .size({ width: '100%', height: '100%' })
+          }
+        })
+      }
+      .columnsTemplate('1fr 1fr 1fr 1fr 1fr')
+      .rowsTemplate('1fr 1fr')
+
+      Grid() {
+        ForEach(this.navigationMenus.slice(10, 20), (item: NavigationMenu) => {
+          GridItem() {
+            Column() {
+              Image(item.iconUrl).width(48).height(48);
+              Text(item.title).fontSize(12);
+            }
+            .alignItems(HorizontalAlign.Center).size({ width: '100%', height: '100%' })
+          }
+        });
+      }.columnsTemplate("1fr 1fr 1fr 1fr 1fr").rowsTemplate('1fr 1fr')
+    }
+    .width('100%').height(160).margin({ top: 10 }).indicatorStyle({ selectedColor: Color.Gray });
+  }
+
+  @Builder
   buildHomeContent() {
     Column() {
       // 放置一个滚动的容器
@@ -105,6 +153,7 @@ export default struct Home {
         Column() {
           this.buildNavigationBar() // 放置一个导航栏
           this.buildSwiper(); // 在主内容区域嵌入一个轮播图组件
+          this.buildNavigationMenus(); // 导航菜单
         }
       }
     }
