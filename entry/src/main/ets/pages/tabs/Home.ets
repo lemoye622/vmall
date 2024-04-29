@@ -97,6 +97,7 @@ export default struct Home {
               Image(item.imageUrl)
             })
           }
+          .autoPlay(true)
           .width(320)
           .borderRadius(20)
           .indicatorStyle({ selectedColor: Color.Gray })
