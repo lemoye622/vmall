@@ -98,7 +98,7 @@ export default struct Home {
             })
           }
           .autoPlay(true)
-          .width(320)
+          .width(328)
           .borderRadius(20)
           .indicatorStyle({ selectedColor: Color.Gray })
         }
@@ -147,6 +147,18 @@ export default struct Home {
   }
 
   @Builder
+  buildNewcomerBenefits() {
+    Row(){
+      Image($r('app.media.newcomer_benefits'))
+        .width(327)
+        .height(170)
+    }
+    .width('100%')
+    .padding({left: 16, right: 16})
+    .margin({top: 8})
+  }
+
+  @Builder
   buildHomeContent() {
     Column() {
       // 放置一个滚动的容器
@@ -155,6 +167,7 @@ export default struct Home {
           this.buildNavigationBar() // 放置一个导航栏
           this.buildSwiper(); // 在主内容区域嵌入一个轮播图组件
           this.buildNavigationMenus(); // 导航菜单
+          this.buildNewcomerBenefits(); // 新人福利专区
         }
       }
     }
