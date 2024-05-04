@@ -2,6 +2,7 @@ import { HttpService } from '../../services/HttpService'
 import { Banner } from '../../types/Banner'
 import promptAction from '@ohos.promptAction';
 import { NavigationMenu } from '../../types/NavigationMenu';
+import { Product } from '../../types/Product';
 
 @Entry
 @Component
@@ -10,10 +11,12 @@ export default struct Home {
   @State isLoadingBanners: boolean = false;
   @State isLoadBannersFailed: boolean = false;
   @State navigationMenus: NavigationMenu[] = [];
+  @State premiumProducts: Product[] = [];
 
   aboutToAppear() {
     this.fetchBanners();
     this.fetchNavigationMenus();
+    this.fetchPremiumProducts();
   }
 
   private async fetchBanners() {
@@ -44,6 +47,15 @@ export default struct Home {
       this.navigationMenus = response.data
     } else {
       console.error('获取 navigationMenus 失败:', response.message);
+    }
+  }
+
+  private async fetchPremiumProducts() {
+    const response = await HttpService.get<Product[]>('/products/premium');
+    if (response.success) {
+      this.premiumProducts = response.data;
+    } else {
+      console.error('获取 premiumProducts 失败:', response.message);
     }
   }
 
@@ -81,7 +93,7 @@ export default struct Home {
   }
 
   @Builder
-  buildSwiper() {
+  buildHomeSwiper() {
     Row() {
       if (this.isLoadingBanners) {
         Image($r('app.media.loading'))
@@ -148,14 +160,53 @@ export default struct Home {
 
   @Builder
   buildNewcomerBenefits() {
-    Row(){
+    Row() {
       Image($r('app.media.newcomer_benefits'))
         .width(327)
         .height(170)
     }
     .width('100%')
-    .padding({left: 16, right: 16})
-    .margin({top: 8})
+    .padding({ left: 16, right: 16 })
+    .margin({ top: 8 })
+  }
+
+  @Builder
+  buildPremium() {
+    Column() {
+      Stack({ alignContent: Alignment.TopStart }) {
+        Column() {
+          if (this.premiumProducts && this.premiumProducts.length) {
+            Swiper() {
+              ForEach(this.premiumProducts, (item: Product) => {
+                this.renderPremiumProduct(item);
+              })
+            }
+            .autoPlay(true).interval(6000)
+          }
+        }.width('100%').backgroundColor(Color.White).borderRadius(20)
+
+        Text('甄选推荐').fontWeight(FontWeight.Bold).margin({ left: 12, top: 12 })
+      }
+    }.width('100%').padding({ left: 16, right: 16 }).margin({ top: 8 })
+  }
+
+  @Builder
+  renderPremiumProduct(product: Product) {
+    Column() {
+      Image(product.imageUrl).width('100%').height(218).objectFit(ImageFit.ScaleDown)
+      Text(product.title).fontWeight(FontWeight.Bold)
+      Text(product.subtitle).fontColor(Color.Green)
+      Row() {
+        Text("¥" + product.price).fontWeight(FontWeight.Bold);
+        Button() {
+          Text('立即购买').fontWeight(FontWeight.Bold);
+        }
+        .backgroundColor($r('app.color.primary_background_color'))
+        .padding({ top: 8, bottom: 8, left: 8, right: 8 })
+      }
+      .width('100%').justifyContent(FlexAlign.SpaceBetween)
+    }
+    .height(324).alignItems(HorizontalAlign.Start).padding({ left: 16, right: 16 })
   }
 
   @Builder
@@ -165,9 +216,10 @@ export default struct Home {
       Scroll() {
         Column() {
           this.buildNavigationBar() // 放置一个导航栏
-          this.buildSwiper(); // 在主内容区域嵌入一个轮播图组件
+          this.buildHomeSwiper(); // 在主内容区域嵌入一个轮播图组件
           this.buildNavigationMenus(); // 导航菜单
           this.buildNewcomerBenefits(); // 新人福利专区
+          this.buildPremium(); // 甄选推荐
         }
       }
     }
