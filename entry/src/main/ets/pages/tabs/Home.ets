@@ -4,6 +4,8 @@ import promptAction from '@ohos.promptAction';
 import { NavigationMenu } from '../../types/NavigationMenu';
 import { Product } from '../../types/Product';
 import { Category } from '../../types/Category';
+import { RECOMMEND_PAGE_SIZE } from '../../config/constants';
+import { GuessYouLike } from '../../components/GuessYouLke'
 
 @Entry
 @Component
@@ -15,6 +17,9 @@ export default struct Home {
   @State premiumProducts: Product[] = [];
   @State categories: Category[] = [];
   @State recommendedProducts: Product[] = [];
+  @State page: number = 1; // 当前页码
+  @State hasMoreRecommendedProducts: boolean = true; // 是否有更多的猜你喜欢的数据
+  @State loadingMoreProducts: boolean = false; // 是否正在加载下一页猜你喜欢的数据
 
   aboutToAppear() {
     this.fetchBanners();
@@ -22,6 +27,18 @@ export default struct Home {
     this.fetchPremiumProducts();
     this.fetchCategories();
     this.fetchRecommendedProducts();
+  }
+
+  loadMoreProducts = async () => {
+    // 若后面还有更多的数据，并且当前没有处于加载下一页的状态，则发请求下一页的数据
+    if (this.hasMoreRecommendedProducts && !this.loadingMoreProducts) {
+      this.loadingMoreProducts = true;
+      this.fetchRecommendedProducts(this.page + 1)
+        .then(() => {
+          this.page++;
+          this.loadingMoreProducts = false;
+        })
+    }
   }
 
   private async fetchBanners() {
@@ -73,10 +90,19 @@ export default struct Home {
     }
   }
 
-  private async fetchRecommendedProducts() {
-    const res = await HttpService.get<Product[]>('/products/premium');
+  private async fetchRecommendedProducts(page: number = 1) {
+    const res = await HttpService.get<Product[]>(`/products/recommended?page=${page}`);
     if (res.success) {
-      this.recommendedProducts = res.data;
+      const newProducts = res.data;
+      if (page === 1) {
+        this.recommendedProducts = newProducts;
+      } else {
+        this.recommendedProducts = [...this.recommendedProducts, ...newProducts];
+      }
+      // 没有取满一页的数据，则意味着取到底了
+      if (!newProducts.length || newProducts.length < RECOMMEND_PAGE_SIZE) {
+        this.hasMoreRecommendedProducts = false;
+     }
     } else {
       console.error('获取 recommendProducts 失败:', res.message);
     }
@@ -146,7 +172,7 @@ export default struct Home {
   }
 
   @Builder
-  buildNavigationMenus() {
+  buildNavigationMenus(){
     Swiper() {
       Grid() {
         ForEach(this.navigationMenus.slice(0, 10), (item: NavigationMenu) => {
@@ -228,14 +254,17 @@ export default struct Home {
 
   @Builder
   buildGuessYouLke() {
-    Column(){
-      Text('猜你喜欢').fontWeight(FontWeight.Bold).padding({ top: 8, right: 16, bottom: 8, left: 16 })
-      Flex({ wrap: FlexWrap.Wrap }) {
-        ForEach(this.recommendedProducts, (product: Product, index: number) => {
-          this.renderGuessYouLikeProduct(product, index);
-        })
-      }.padding({ left: 16, right: 16 })
-    }.alignItems(HorizontalAlign.Start)
+    GuessYouLike({ recommendedProducts: $recommendedProducts });
+    if (this.loadingMoreProducts) {
+      Row(){
+        Image($r('app.media.loading')).width(20).height(20)
+        Text('正在加载...').fontSize(14).margin({left: 8})
+      }
+    } else {
+      if (!this.hasMoreRecommendedProducts) {
+        Text('没有更多推荐商品了').padding({top: 10, bottom: 10}).textAlign(TextAlign.Center).fontSize(16)
+      }
+    }
   }
 
   @Builder
@@ -282,23 +311,6 @@ export default struct Home {
   }
 
   @Builder
-  renderGuessYouLikeProduct(product: Product, index: number) {
-    Column() {
-      Image(product.imageUrl).width(160).height(160)
-      Text(product.title).fontSize(14).margin({ top: 5, left: 10 })
-      Text(product.subtitle).fontSize(12).fontColor(Color.Gray).margin({ top: 5, left: 10 })
-      Text(`¥${product.price}`).fontWeight(FontWeight.Bold).margin({ top: 5, left: 10 })
-    }
-    .width(160)
-    .height(271)
-    .justifyContent(FlexAlign.SpaceAround)
-    .backgroundColor(Color.White)
-    .borderRadius(10)
-    .margin({ bottom: 8, left: index % 2 ? 8 : 0 })
-    .alignItems(HorizontalAlign.Start)
-  }
-
-  @Builder
   buildHomeContent() {
     Column() {
       // 放置一个滚动的容器
@@ -313,6 +325,8 @@ export default struct Home {
           this.buildGuessYouLke(); // 猜你喜欢
         }
       }
+      .edgeEffect(EdgeEffect.None)
+      .onScrollEdge(this.loadMoreProducts);
     }
     .width('100%')
     .height('100%')

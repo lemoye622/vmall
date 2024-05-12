@@ -1,0 +1,1 @@
+export  const RECOMMEND_PAGE_SIZE: number = 4;
