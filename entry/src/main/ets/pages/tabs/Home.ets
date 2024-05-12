@@ -3,6 +3,7 @@ import { Banner } from '../../types/Banner'
 import promptAction from '@ohos.promptAction';
 import { NavigationMenu } from '../../types/NavigationMenu';
 import { Product } from '../../types/Product';
+import { Category } from '../../types/Category';
 
 @Entry
 @Component
@@ -12,11 +13,13 @@ export default struct Home {
   @State isLoadBannersFailed: boolean = false;
   @State navigationMenus: NavigationMenu[] = [];
   @State premiumProducts: Product[] = [];
+  @State categories: Category[] = [];
 
   aboutToAppear() {
     this.fetchBanners();
     this.fetchNavigationMenus();
     this.fetchPremiumProducts();
+    this.fetchCategories();
   }
 
   private async fetchBanners() {
@@ -42,20 +45,29 @@ export default struct Home {
   }
 
   private async fetchNavigationMenus() {
-    const response = await HttpService.get<NavigationMenu[]>('/navigationMenus');
-    if (response.success) {
-      this.navigationMenus = response.data
+    const res = await HttpService.get<NavigationMenu[]>('/navigationMenus');
+    if (res.success) {
+      this.navigationMenus = res.data
     } else {
-      console.error('获取 navigationMenus 失败:', response.message);
+      console.error('获取 navigationMenus 失败:', res.message);
     }
   }
 
   private async fetchPremiumProducts() {
-    const response = await HttpService.get<Product[]>('/products/premium');
-    if (response.success) {
-      this.premiumProducts = response.data;
+    const res = await HttpService.get<Product[]>('/products/premium');
+    if (res.success) {
+      this.premiumProducts = res.data;
     } else {
-      console.error('获取 premiumProducts 失败:', response.message);
+      console.error('获取 premiumProducts 失败:', res.message);
+    }
+  }
+
+  private async fetchCategories() {
+    const res = await HttpService.get<Category[]>('/categories/products');
+    if (res.success) {
+      this.categories = res.data;
+    } else {
+      console.error('获取 categories 失败:', res.message);
     }
   }
 
@@ -191,6 +203,19 @@ export default struct Home {
   }
 
   @Builder
+  buildGoodsAreas() {
+    ForEach(this.categories, (item: Category) => {
+      if (item.products && item.products.length) {
+        Column() {
+          this.renderAreaTitle(item.name);
+          this.renderAreaProducts(item.products);
+        }
+        .width(328).margin({ top: 8, right: 16, bottom: 8, left: 16 }).borderRadius(16).backgroundColor(Color.White)
+      }
+    })
+  }
+
+  @Builder
   renderPremiumProduct(product: Product) {
     Column() {
       Image(product.imageUrl).width('100%').height(218).objectFit(ImageFit.ScaleDown)
@@ -210,6 +235,30 @@ export default struct Home {
   }
 
   @Builder
+  renderAreaTitle(name: string) {
+    Row() {
+      Text(`${name}专区`).fontWeight(FontWeight.Bold).margin({ left: 10 })
+      Row() {
+        Text('更多')
+        Image($r('app.media.right_arrow')).width(17).height(19)
+      }.padding({ top: 15, right: 12, bottom: 15, left: 12 })
+    }.width('100%').justifyContent(FlexAlign.SpaceBetween)
+  }
+
+  @Builder
+  renderAreaProducts(products: Product[]) {
+    Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.SpaceBetween }) {
+      ForEach(products, (product: Product) => {
+        Column() {
+          Image(product.imageUrl).width(102).height(102)
+          Text(product.title).fontSize(14).fontWeight(FontWeight.Bold)
+          Text(`¥${product.price}`).fontWeight(FontWeight.Bold)
+        }.justifyContent(FlexAlign.Center).width('50%').height(177).justifyContent(FlexAlign.SpaceAround)
+      })
+    }
+  }
+
+  @Builder
   buildHomeContent() {
     Column() {
       // 放置一个滚动的容器
@@ -220,6 +269,7 @@ export default struct Home {
           this.buildNavigationMenus(); // 导航菜单
           this.buildNewcomerBenefits(); // 新人福利专区
           this.buildPremium(); // 甄选推荐
+          this.buildGoodsAreas(); // 商品专区
         }
       }
     }

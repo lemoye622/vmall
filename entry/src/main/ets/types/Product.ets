@@ -10,5 +10,6 @@ export interface Product {
   isNew: boolean;
   isRecommended: boolean;
   isPremium: boolean;
+  sortOrder: number;
   isActive: boolean;
 }
