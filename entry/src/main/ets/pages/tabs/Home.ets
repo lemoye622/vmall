@@ -14,12 +14,14 @@ export default struct Home {
   @State navigationMenus: NavigationMenu[] = [];
   @State premiumProducts: Product[] = [];
   @State categories: Category[] = [];
+  @State recommendedProducts: Product[] = [];
 
   aboutToAppear() {
     this.fetchBanners();
     this.fetchNavigationMenus();
     this.fetchPremiumProducts();
     this.fetchCategories();
+    this.fetchRecommendedProducts();
   }
 
   private async fetchBanners() {
@@ -68,6 +70,15 @@ export default struct Home {
       this.categories = res.data;
     } else {
       console.error('获取 categories 失败:', res.message);
+    }
+  }
+
+  private async fetchRecommendedProducts() {
+    const res = await HttpService.get<Product[]>('/products/premium');
+    if (res.success) {
+      this.recommendedProducts = res.data;
+    } else {
+      console.error('获取 recommendProducts 失败:', res.message);
     }
   }
 
@@ -216,6 +227,18 @@ export default struct Home {
   }
 
   @Builder
+  buildGuessYouLke() {
+    Column(){
+      Text('猜你喜欢').fontWeight(FontWeight.Bold).padding({ top: 8, right: 16, bottom: 8, left: 16 })
+      Flex({ wrap: FlexWrap.Wrap }) {
+        ForEach(this.recommendedProducts, (product: Product, index: number) => {
+          this.renderGuessYouLikeProduct(product, index);
+        })
+      }.padding({ left: 16, right: 16 })
+    }.alignItems(HorizontalAlign.Start)
+  }
+
+  @Builder
   renderPremiumProduct(product: Product) {
     Column() {
       Image(product.imageUrl).width('100%').height(218).objectFit(ImageFit.ScaleDown)
@@ -259,6 +282,23 @@ export default struct Home {
   }
 
   @Builder
+  renderGuessYouLikeProduct(product: Product, index: number) {
+    Column() {
+      Image(product.imageUrl).width(160).height(160)
+      Text(product.title).fontSize(14).margin({ top: 5, left: 10 })
+      Text(product.subtitle).fontSize(12).fontColor(Color.Gray).margin({ top: 5, left: 10 })
+      Text(`¥${product.price}`).fontWeight(FontWeight.Bold).margin({ top: 5, left: 10 })
+    }
+    .width(160)
+    .height(271)
+    .justifyContent(FlexAlign.SpaceAround)
+    .backgroundColor(Color.White)
+    .borderRadius(10)
+    .margin({ bottom: 8, left: index % 2 ? 8 : 0 })
+    .alignItems(HorizontalAlign.Start)
+  }
+
+  @Builder
   buildHomeContent() {
     Column() {
       // 放置一个滚动的容器
@@ -270,6 +310,7 @@ export default struct Home {
           this.buildNewcomerBenefits(); // 新人福利专区
           this.buildPremium(); // 甄选推荐
           this.buildGoodsAreas(); // 商品专区
+          this.buildGuessYouLke(); // 猜你喜欢
         }
       }
     }
