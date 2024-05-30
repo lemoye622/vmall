@@ -4,7 +4,7 @@ import promptAction from '@ohos.promptAction';
 import { NavigationMenu } from '../../types/NavigationMenu';
 import { Product } from '../../types/Product';
 import { Category } from '../../types/Category';
-import { RECOMMEND_PAGE_SIZE } from '../../config/constants';
+import { RECOMMEND_PAGE_SIZE, SCREEN_HEIGHT } from '../../config/constants';
 import { GuessYouLike } from '../../components/GuessYouLke'
 
 @Entry
@@ -20,6 +20,8 @@ export default struct Home {
   @State page: number = 1; // 当前页码
   @State hasMoreRecommendedProducts: boolean = true; // 是否有更多的猜你喜欢的数据
   @State loadingMoreProducts: boolean = false; // 是否正在加载下一页猜你喜欢的数据
+  @State isShowBackTopButton: boolean = false; // 是否显示回到顶部的按钮
+  scroller: Scroller = new Scroller(); // 滚动条实例
 
   aboutToAppear() {
     this.fetchBanners();
@@ -31,7 +33,7 @@ export default struct Home {
 
   loadMoreProducts = async () => {
     // 若后面还有更多的数据，并且当前没有处于加载下一页的状态，则发请求下一页的数据
-    if (this.hasMoreRecommendedProducts && !this.loadingMoreProducts) {
+    if (this.hasMoreRecommendedProducts && !this.loadingMoreProducts)   {
       this.loadingMoreProducts = true;
       this.fetchRecommendedProducts(this.page + 1)
         .then(() => {
@@ -314,7 +316,7 @@ export default struct Home {
   buildHomeContent() {
     Column() {
       // 放置一个滚动的容器
-      Scroll() {
+      Scroll(this.scroller) {
         Column() {
           this.buildNavigationBar() // 放置一个导航栏
           this.buildHomeSwiper(); // 在主内容区域嵌入一个轮播图组件
@@ -326,11 +328,42 @@ export default struct Home {
         }
       }
       .edgeEffect(EdgeEffect.None)
-      .onScrollEdge(this.loadMoreProducts);
+      .onScrollEdge(this.loadMoreProducts)
+      .onScroll(() => {
+        // 当累计向上滚动的高度超过一屏高度时就会出现回到顶部的按钮
+        this.isShowBackTopButton = this.scroller.currentOffset().yOffset > SCREEN_HEIGHT;
+      });
     }
     .width('100%')
     .height('100%')
     .padding({ top: 58 })
+  }
+
+  @Builder
+  buildBackTop() {
+    if (this.isShowBackTopButton) {
+      Row(){
+        Image($r('app.media.back_top')).width(24).height(24)
+      }
+      .width(40)
+      .height(40)
+      .borderRadius(20)
+      .backgroundColor(Color.White)
+      .justifyContent(FlexAlign.Center)
+      .position({x: '85%', y: '93%'})
+      .onClick(this.backToTop)
+    }
+  }
+
+  backToTop = () => {
+    this.scroller.scrollTo({
+      xOffset: 0,
+      yOffset: 0,
+      animation: {
+        duration: 500,
+        curve: Curve.Smooth
+      }
+    })
   }
 
   build() {
@@ -340,7 +373,8 @@ export default struct Home {
     }) {
       // 构建首页的主内容区域
       this.buildHomeContent();
-      this.buildHomeHeader()
+      this.buildHomeHeader();
+      this.buildBackTop();
     }
     .width('100%')
     .height('100%')

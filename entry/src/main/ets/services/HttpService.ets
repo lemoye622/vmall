@@ -2,7 +2,7 @@ import http from '@ohos.net.http';
 import { HttpResponse } from '../types/HttpResponse'
 
 // 定义基础URL
-const BASE_URL = 'http://192.168.1.17:3000' // 若是模拟器访问要用ip地址
+const BASE_URL = 'http://localhost:3000' // 若是模拟器访问要用ip地址
 // 定义请求的超时时间
 const HTTP_CONNECT_TIMEOUT = 10000;
 // 定义读取响应的超时时间
