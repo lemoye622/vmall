@@ -255,7 +255,7 @@ export default struct Home {
   }
 
   @Builder
-  buildGuessYouLke() {
+  buildGuessYouLike() {
     GuessYouLike({ recommendedProducts: $recommendedProducts });
     if (this.loadingMoreProducts) {
       Row(){
@@ -324,7 +324,7 @@ export default struct Home {
           this.buildNewcomerBenefits(); // 新人福利专区
           this.buildPremium(); // 甄选推荐
           this.buildGoodsAreas(); // 商品专区
-          this.buildGuessYouLke(); // 猜你喜欢
+          this.buildGuessYouLike(); // 猜你喜欢
         }
       }
       .edgeEffect(EdgeEffect.None)
