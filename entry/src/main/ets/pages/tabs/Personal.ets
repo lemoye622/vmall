@@ -9,7 +9,9 @@ export default struct Personal {
   @State isShowNavigator: boolean = false;
   @State recommendedProducts: Product[] = [];
   @State hasMoreRecommendedProducts: boolean = true; // 是否有更多的猜你喜欢的数据
-  @State loadingMoreProducts: boolean = false; // 是否正在加载下一页猜你喜欢的数据
+  @State isLoadingMoreProducts: boolean = false; // 是否正在加载下一页猜你喜欢的数据
+  @State isLoadRecommendedProductsError: boolean = false;
+  @State recommendedProductsErrorMessage: string = "";
   scroller: Scroller = new Scroller(); // 滚动条实例
 
   aboutToAppear() {
@@ -18,19 +20,28 @@ export default struct Personal {
 
   fetchRecommendedProducts = async () => {
     // 若当前正在加载中或没有更多数据了，直接返回
-    if (this.loadingMoreProducts || !this.hasMoreRecommendedProducts) return;
+    if (this.isLoadingMoreProducts || !this.hasMoreRecommendedProducts) return;
     // 这次的处理方式和之前不一样，此处不单独维护一个当前页码的变量，而是动态根据数据的条数进行计算
     const nextPage = Math.ceil(this.recommendedProducts.length / RECOMMEND_PAGE_SIZE) + 1;
-    this.loadingMoreProducts = true;
-    const res = await HttpService.get<Product[]>(`/products/recommended?page=${nextPage}`);
-    if (res.success) {
-      const newProducts = res.data;
-      this.recommendedProducts = nextPage === 1 ? newProducts : [...this.recommendedProducts, ...newProducts];
-      this.hasMoreRecommendedProducts = newProducts.length && newProducts.length >= RECOMMEND_PAGE_SIZE;
-    } else {
-      console.error('获取 recommendProducts 失败:', res.message);
+    this.isLoadingMoreProducts = true;
+    this.isLoadRecommendedProductsError = false;
+    try {
+      const res = await HttpService.get<Product[]>(`/products/recommended?page=${nextPage}`);
+      if (res.success) {
+        const newProducts = res.data;
+        this.recommendedProducts = nextPage === 1 ? newProducts : [...this.recommendedProducts, ...newProducts];
+        this.hasMoreRecommendedProducts = newProducts.length && newProducts.length >= RECOMMEND_PAGE_SIZE;
+      } else {
+        this.isLoadRecommendedProductsError = true;
+        this.recommendedProductsErrorMessage = '加载失败，请点击重试。';
+        console.error('获取 recommendProducts 失败:', res.message);
+      }
+    } catch (error) {
+      this.isLoadRecommendedProductsError = true;
+      this.recommendedProductsErrorMessage = error.message || '网络错误，请重试。';
+    } finally {
+      this.isLoadingMoreProducts = false;
     }
-    this.loadingMoreProducts = false;
   }
 
   @Builder
@@ -289,12 +300,17 @@ export default struct Personal {
   @Builder
   buildGuessYouLike() {
     GuessYouLike({ recommendedProducts: $recommendedProducts });
-    if (this.loadingMoreProducts) {
+    if (this.isLoadingMoreProducts) {
       Row() {
         Image($r('app.media.loading')).width(20).height(20)
         Text('正在加载...').fontSize(14).margin({ left: 8 })
       }
       .padding({ bottom: 10 })
+    } else if (this.isLoadRecommendedProductsError) {
+      Text(this.recommendedProductsErrorMessage)
+        .width('100%')
+        .textAlign(TextAlign.Center)
+        .onClick(this.fetchRecommendedProducts)
     } else {
       if (!this.hasMoreRecommendedProducts) {
         Text('没有更多推荐商品了').padding({ bottom: 10 }).textAlign(TextAlign.Center).fontSize(16)
